@@ -38,5 +38,5 @@ class BookViewModel(
     fun refreshBooks() {
         loadBooks()
     }
-}
 
+}
