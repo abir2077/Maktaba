@@ -45,23 +45,36 @@ fun AddBookView(
                 label = { Text("Title") },
                 modifier = Modifier.fillMaxWidth()
             )
+
             OutlinedTextField(
                 value = uiState.isbn,
                 onValueChange = { viewModel.onAction(AddBookUiAction.OnIsbnChange(it)) },
                 label = { Text("ISBN") },
                 modifier = Modifier.fillMaxWidth()
             )
+
             OutlinedTextField(
-                value = uiState.nbPages,
+                value = uiState.pages,
                 onValueChange = { viewModel.onAction(AddBookUiAction.OnPagesChange(it)) },
                 label = { Text("Pages") },
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
+            //  الجديد: خانة رابط الصورة
+            OutlinedTextField(
+                value = uiState.imageUrl,
+                onValueChange = {
+                    viewModel.onAction(AddBookUiAction.OnImageUrlChange(it))
+                },
+                label = { Text("Image URL") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Button(
                 onClick = { viewModel.onAction(AddBookUiAction.OnAddClick) },
+                enabled = uiState.isFormValid,   //  المهم
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Confirm Add")

@@ -53,11 +53,13 @@ class BookViewModel @Inject constructor(
                 _uiState.update { it.copy(isAddingBook = false) }
             }
             is BookUiAction.OnAddBookConfirm -> {
-                val newBook = Book(
-                    isbn = action.isbn,
-                    title = action.title,
-                    nbPages = action.nbPages
+                val newBook =Book(
+                    id = 1,
+                    title = "...",
+                    isbn = "1234567890123",
+                    pages = 100
                 )
+
                 addBookUseCase(newBook)
                 _uiState.update { it.copy(isAddingBook = false) }
             }

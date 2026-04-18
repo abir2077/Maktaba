@@ -4,5 +4,9 @@ sealed class AddBookUiAction {
     data class OnTitleChange(val title: String) : AddBookUiAction()
     data class OnIsbnChange(val isbn: String) : AddBookUiAction()
     data class OnPagesChange(val pages: String) : AddBookUiAction()
+
+    //  التعديل هنا فقط
+    data class OnImageUrlChange(val imageUrl: String) : AddBookUiAction()
+
     object OnAddClick : AddBookUiAction()
 }

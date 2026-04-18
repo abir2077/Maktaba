@@ -16,7 +16,7 @@ class BookDetailViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val isbn: String = checkNotNull(savedStateHandle["isbn"])
-    
+
     private val _uiState = MutableStateFlow(BookDetailUiState())
     val uiState = _uiState.asStateFlow()
 
@@ -24,13 +24,21 @@ class BookDetailViewModel @Inject constructor(
         loadBook()
     }
 
-    private fun loadBook() {
+    // ✅ بدون parameters (مهم)
+    fun loadBook() {
         _uiState.update { it.copy(isLoading = true) }
+
         val book = getBookByIsbnUseCase(isbn)
-        _uiState.update { it.copy(isLoading = false, book = book) }
+
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                book = book
+            )
+        }
     }
 
     fun onAction(action: BookDetailUiAction) {
-        // Handle actions like "Retry" or "Refresh" if added later
+        // future actions
     }
 }

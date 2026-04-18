@@ -19,6 +19,7 @@ fun NavGraph(
         navController = navController,
         startDestination = Screen.Onboarding.route
     ) {
+
         composable(Screen.Onboarding.route) {
             OnboardingView(
                 onNavigateToLibrary = {
@@ -28,25 +29,34 @@ fun NavGraph(
                 }
             )
         }
-        
+
         composable(Screen.BookList.route) {
             BookListView(
                 onCategoriesClick = { navController.navigate(Screen.CategoryList.route) },
                 onAddBookClick = { navController.navigate(Screen.AddBook.route) },
-                onBookClick = { isbn -> 
+                onBookClick = { isbn ->
                     navController.navigate(Screen.BookDetail.createRoute(isbn))
                 }
             )
         }
-        
-        composable(Screen.BookDetail.route) {
-            BookDetailView(onBackClick = { navController.popBackStack() })
+
+        // ✅ التعديل المهم هنا
+        composable(
+            route = Screen.BookDetail.route
+        ) { backStackEntry ->
+
+            val isbn = backStackEntry.arguments?.getString("isbn")
+
+            BookDetailView(
+                isbn = isbn ?: "",
+                onBackClick = { navController.popBackStack() }
+            )
         }
-        
+
         composable(Screen.CategoryList.route) {
             CategoryListView(onBackClick = { navController.popBackStack() })
         }
-        
+
         composable(Screen.AddBook.route) {
             AddBookView(onBackClick = { navController.popBackStack() })
         }
