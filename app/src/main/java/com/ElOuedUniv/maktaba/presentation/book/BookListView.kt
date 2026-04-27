@@ -8,46 +8,79 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import coil.compose.AsyncImage
 import com.ElOuedUniv.maktaba.data.model.Book
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookListView(
+    selectedCategoryId: String? = null,
     onCategoriesClick: () -> Unit = {},
     onAddBookClick: () -> Unit = {},
     onBookClick: (String) -> Unit = {},
-    viewModel: BookViewModel = hiltViewModel()
+    viewModel: BookViewModel = hiltViewModel(),
+    onDispose: (() -> Unit?) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // ✅ متغير محلي لإعادة التحميل القسري عند العودة من الإضافة
+    var refreshTrigger by remember { mutableStateOf(0) }
+
+    // ✅ تحميل الكتب عند أول دخول أو عند تغيير التصنيف أو عند التحديث القسري
+    LaunchedEffect(selectedCategoryId, refreshTrigger) {
+        if (selectedCategoryId != null) {
+            viewModel.loadBooksByCategory(selectedCategoryId)
+        } else {
+            viewModel.loadBooks()
+        }
+    }
+
+    // ✅ مراقبة ON_RESUME لإعادة تحميل الكتب مباشرة من قاعدة البيانات
+    LaunchedEffect(Unit) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                // ✅ تغيير قيمة refreshTrigger ليعيد تحميل الكتب من جديد
+                refreshTrigger++
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { 
+                title = {
                     Text(
-                        "MY LIBRARY", 
+                        "MY LIBRARY",
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 2.sp
                         )
-                    ) 
+                    )
                 },
                 actions = {
                     IconButton(onClick = {}) {
                         Icon(Icons.Default.GridView, contentDescription = "Grid View")
                     }
+
                     IconButton(onClick = onCategoriesClick) {
                         Icon(Icons.Default.List, contentDescription = "Categories")
                     }
@@ -159,9 +192,9 @@ fun BookCard(book: Book, onClick: () -> Unit) {
                     maxLines = 2,
                     minLines = 2
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -179,7 +212,7 @@ fun BookCard(book: Book, onClick: () -> Unit) {
                             fontWeight = FontWeight.Medium
                         )
                     }
-                    
+
                     val statusText = if (book.nbPages > 0) "Reading" else "Finished"
                     val statusIcon = if (book.nbPages > 0) Icons.Default.Bookmark else Icons.Default.CheckCircle
                     val statusColor = if (book.nbPages > 0) MaterialTheme.colorScheme.primary else Color(0xFF4CAF50)

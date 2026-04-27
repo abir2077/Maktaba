@@ -4,10 +4,15 @@ import com.ElOuedUniv.maktaba.data.model.Book
 import kotlinx.coroutines.flow.Flow
 
 interface BookRepository {
-    
-    fun getAllBooks(): Flow<List<Book>>
-    
-    fun getBookByIsbn(isbn: String): Book?
 
-    fun addBook(book: Book)
+    suspend fun addBook(book: Book)
+
+    fun getBooksByCategory(categoryId: String): Flow<List<Book>>
+
+    fun getAllBooks(): Flow<List<Book>>
+
+    suspend fun getBookByIsbn(isbn: String): Book?
+
+    suspend fun deleteBook(isbn: String)
+
 }

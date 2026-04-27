@@ -9,6 +9,7 @@ import com.ElOuedUniv.maktaba.data.model.Book
 data class BookUiState(
     val books: List<Book> = emptyList(),
     val isLoading: Boolean = false,
+    val imageUrl: String? = null,
     val errorMessage: String? = null,
     val isAddingBook: Boolean = false // State for the FAB form
 )

@@ -21,18 +21,35 @@ class BookRepositoryImpl @Inject constructor() : BookRepository {
     private val booksFlow = MutableSharedFlow<List<Book>>(replay = 1).apply {
         tryEmit(_booksList.toList())
     }
-    
-    override fun getAllBooks(): Flow<List<Book>> = flow {
-        delay(2000) // Simulate delay
+
+    override  fun getAllBooks(): Flow<List<Book>> = flow {
+        delay(2000)
         emitAll(booksFlow)
     }
 
-    override fun getBookByIsbn(isbn: String): Book? {
-        return _booksList.find { it.isbn == isbn }
+    override fun getBooksByCategory(categoryId: String): Flow<List<Book>> = flow {
+        delay(500)
+        emit(_booksList.filter { it.categoryId == categoryId })
     }
 
-    override fun addBook(book: Book) {
+    // ✅ FIX: رجعنا البحث الحقيقي بدل null
+    override suspend fun getBookByIsbn(isbn: String): Book? {
+        return try {
+            _booksList.find { it.isbn == isbn }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    // ✅ كودك كما هو
+    override suspend fun addBook(book: Book) {
         _booksList.add(book)
+        booksFlow.tryEmit(_booksList.toList())
+    }
+
+    // ✅ FIX: إضافة deleteBook (هذا سبب crash تاعك)
+    override suspend fun deleteBook(isbn: String) {
+        _booksList.removeAll { it.isbn == isbn }
         booksFlow.tryEmit(_booksList.toList())
     }
 }

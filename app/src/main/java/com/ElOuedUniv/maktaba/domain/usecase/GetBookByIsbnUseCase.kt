@@ -4,9 +4,9 @@ import com.ElOuedUniv.maktaba.data.model.Book
 import com.ElOuedUniv.maktaba.data.repository.BookRepository
 
 class GetBookByIsbnUseCase(
-    private val bookRepository: BookRepository
+    private val repository: BookRepository
 ) {
-    operator fun invoke(isbn: String): Book? {
-        return bookRepository.getBookByIsbn(isbn)
+    suspend operator fun invoke(isbn: String): Book? {
+        return repository.getBookByIsbn(isbn)
     }
 }

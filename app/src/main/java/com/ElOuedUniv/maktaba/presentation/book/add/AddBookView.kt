@@ -11,15 +11,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,6 +32,14 @@ fun AddBookView(
     onBackClick: () -> Unit,
     viewModel: AddBookViewModel = hiltViewModel()
 ) {
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.onAction(AddBookUiAction.OnImageSelected(uri))
+        }
+    }
+
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
 
@@ -39,14 +52,14 @@ fun AddBookView(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { 
+                title = {
                     Text(
-                        "ADD BOOK", 
+                        "ADD BOOK",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
                         )
-                    ) 
+                    )
                 },
                 navigationIcon = {
                     TextButton(onClick = onBackClick) {
@@ -56,9 +69,12 @@ fun AddBookView(
                 actions = {
                     TextButton(
                         onClick = { viewModel.onAction(AddBookUiAction.OnAddClick) },
-                        enabled = uiState.isFormValid
+                        enabled = uiState.isFormValid && !uiState.isLoading
                     ) {
-                        val color = if (uiState.isFormValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                        val color =
+                            if (uiState.isFormValid && !uiState.isLoading) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+
                         Text("Confirm", fontWeight = FontWeight.Bold, color = color)
                     }
                 },
@@ -68,6 +84,7 @@ fun AddBookView(
             )
         }
     ) { padding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -78,6 +95,7 @@ fun AddBookView(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+
             // Add Cover Image Placeholder
             Card(
                 modifier = Modifier
@@ -87,31 +105,88 @@ fun AddBookView(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 ),
-                onClick = { /* Simulation: Pick image */ }
+                onClick = {
+                    if (!uiState.isLoading) {
+                        imagePicker.launch("image/*")
+                    }
+                }
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.AddPhotoAlternate,
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        "ADD COVER IMAGE",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    when {
+                        // ✅ حالة تحميل الصورة
+                        uiState.isLoading -> {
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(48.dp),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    "Uploading image...",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        // ✅ عرض الصورة إذا وجدت
+                        uiState.imageUrl != null -> {
+                            AsyncImage(
+                                model = uiState.imageUrl,
+                                contentDescription = "Book Cover",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                            // ✅ أيقونة تغيير الصورة
+                            IconButton(
+                                onClick = { imagePicker.launch("image/*") },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(8.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                        shape = CircleShape
+                                    )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Change image",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        // ✅ واجهة اختيار الصورة الافتراضية
+                        else -> {
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AddPhotoAlternate,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(48.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    "ADD COVER IMAGE",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
             // Input Fields
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+
                 OutlinedTextField(
                     value = uiState.title,
                     onValueChange = { viewModel.onAction(AddBookUiAction.OnTitleChange(it)) },
@@ -144,14 +219,52 @@ fun AddBookView(
                     isError = uiState.nbPagesError != null,
                     supportingText = { uiState.nbPagesError?.let { Text(it) } }
                 )
+
+                // 🔥 CATEGORY DROPDOWN
+                ExposedDropdownMenuBox(
+                    expanded = uiState.isDropdownExpanded,
+                    onExpandedChange = {
+                        viewModel.onAction(AddBookUiAction.OnToggleDropdown)
+                    }
+                ) {
+                    OutlinedTextField(
+                        value = uiState.categories
+                            .find { it.id == uiState.categoryId }?.name ?: "Select Category",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Category") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = uiState.isDropdownExpanded)
+                        }
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = uiState.isDropdownExpanded,
+                        onDismissRequest = {
+                            viewModel.onAction(AddBookUiAction.OnToggleDropdown)
+                        }
+                    ) {
+                        uiState.categories.forEach { category ->
+                            DropdownMenuItem(
+                                text = { Text(category.name) },
+                                onClick = {
+                                    viewModel.onAction(AddBookUiAction.OnCategoryChange(category.id))
+                                    viewModel.onAction(AddBookUiAction.OnToggleDropdown)
+                                }
+                            )
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Primary Confirm Button
             Button(
                 onClick = { viewModel.onAction(AddBookUiAction.OnAddClick) },
-                enabled = uiState.isFormValid,
+                enabled = uiState.isFormValid && !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -160,7 +273,6 @@ fun AddBookView(
                 Text("Confirm", style = MaterialTheme.typography.titleMedium)
             }
 
-            // Secondary Cancel Button
             TextButton(
                 onClick = onBackClick,
                 modifier = Modifier.fillMaxWidth()

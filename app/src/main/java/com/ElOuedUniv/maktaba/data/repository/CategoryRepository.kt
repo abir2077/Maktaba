@@ -8,4 +8,6 @@ interface CategoryRepository {
     fun getAllCategories(): Flow<List<Category>>
     
     fun getCategoryById(id: String): Category?
+
+    fun getCategories(): Flow<List<Category>>
 }

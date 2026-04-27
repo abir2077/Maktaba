@@ -15,19 +15,22 @@ class CategoryRepositoryImpl @Inject constructor() : CategoryRepository {
             id = "1",
             name = "Programming",
             description = "Books about software development and coding",
-            iconRes = android.R.drawable.ic_menu_preferences
+            iconUrl = null,
+            createdAt = null
         ),
         Category(
             id = "2",
             name = "Algorithms",
             description = "Books about algorithms and data structures",
-            iconRes = android.R.drawable.ic_menu_compass
+            iconUrl = null,
+            createdAt = null
         ),
         Category(
             id = "3",
             name = "Databases",
             description = "Books about database design and management",
-            iconRes = android.R.drawable.ic_menu_save
+            iconUrl = null,
+            createdAt = null
         )
     )
 
@@ -42,5 +45,9 @@ class CategoryRepositoryImpl @Inject constructor() : CategoryRepository {
 
     override fun getCategoryById(id: String): Category? {
         return _categoriesList.find { it.id == id }
+    }
+
+    override fun getCategories(): Flow<List<Category>> = flow {
+        emit(emptyList()) // أو بيانات وهمية إذا ما عندكش DB هنا
     }
 }

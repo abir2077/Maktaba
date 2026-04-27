@@ -5,12 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.ElOuedUniv.maktaba.data.model.Book
 import com.ElOuedUniv.maktaba.domain.usecase.AddBookUseCase
 import com.ElOuedUniv.maktaba.domain.usecase.GetBooksUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
@@ -23,48 +24,108 @@ class BookViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(BookUiState())
     val uiState: StateFlow<BookUiState> = _uiState.asStateFlow()
 
+    // ✅ إزالة isLoaded أو جعله يُعاد تعيينه عند الحاجة
+    private var isLoaded = false
+
     init {
         loadBooks()
     }
 
     fun loadBooks() {
+        // ✅ إزالة الشرط الذي يمنع إعادة التحميل
+        // if (isLoaded) return  // ❌ تم حذف هذا السطر
+
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
+
             getBooksUseCase()
                 .catch { e ->
-                    _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = e.message
+                        )
+                    }
                 }
-                .collect { bookList ->
-                    _uiState.update { it.copy(isLoading = false, books = bookList) }
+                .collect { books ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            books = books
+                        )
+                    }
+                    isLoaded = true
                 }
         }
     }
 
-    /**
-     * Exercise 3 - Handle UI Actions
-     */
+    // 🟢 NEW: FILTER BY CATEGORY
+    fun loadBooksByCategory(categoryId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+
+            getBooksUseCase()
+                .map { list ->
+                    list.filter { it.categoryId == categoryId }
+                }
+                .catch { e ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = e.message
+                        )
+                    }
+                }
+                .collect { filtered ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            books = filtered
+                        )
+                    }
+                }
+        }
+    }
+
     fun onAction(action: BookUiAction) {
         when (action) {
-            BookUiAction.RefreshBooks -> refreshBooks()
+
+            BookUiAction.RefreshBooks -> {
+                isLoaded = false
+                loadBooks()
+            }
+
             BookUiAction.OnAddBookClick -> {
                 _uiState.update { it.copy(isAddingBook = true) }
             }
+
             BookUiAction.OnDismissAddBook -> {
                 _uiState.update { it.copy(isAddingBook = false) }
             }
+
             is BookUiAction.OnAddBookConfirm -> {
+
                 val newBook = Book(
                     isbn = action.isbn,
                     title = action.title,
-                    nbPages = action.nbPages
+                    nbPages = action.nbPages,
+                    imageUrl = null,
+                    categoryId = action.categoryId
                 )
-                addBookUseCase(newBook)
+
+                viewModelScope.launch {
+                    addBookUseCase(newBook)
+
+                    getBooksUseCase().collect { books ->
+                        _uiState.update {
+                            it.copy(books = books)
+                        }
+                        return@collect
+                    }
+                }
+
                 _uiState.update { it.copy(isAddingBook = false) }
             }
         }
-    }
-
-    fun refreshBooks() {
-        loadBooks()
     }
 }

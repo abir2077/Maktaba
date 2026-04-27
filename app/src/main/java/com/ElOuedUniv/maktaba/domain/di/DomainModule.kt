@@ -5,6 +5,9 @@ import com.ElOuedUniv.maktaba.data.repository.CategoryRepository
 import com.ElOuedUniv.maktaba.domain.usecase.AddBookUseCase
 import com.ElOuedUniv.maktaba.domain.usecase.GetBooksUseCase
 import com.ElOuedUniv.maktaba.domain.usecase.GetCategoriesUseCase
+import android.content.ContentResolver
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -45,5 +48,14 @@ object DomainModule {
         bookRepository: BookRepository
     ): com.ElOuedUniv.maktaba.domain.usecase.GetBookByIsbnUseCase {
         return com.ElOuedUniv.maktaba.domain.usecase.GetBookByIsbnUseCase(bookRepository)
+    }
+
+    // ✅ FIX IMPORTANT: ContentResolver provider (correct + safe)
+    @Provides
+    @Singleton
+    fun provideContentResolver(
+        @ApplicationContext context: Context
+    ): ContentResolver {
+        return context.contentResolver
     }
 }

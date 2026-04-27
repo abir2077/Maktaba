@@ -1,9 +1,10 @@
 package com.ElOuedUniv.maktaba.data.di
 
 import com.ElOuedUniv.maktaba.data.repository.BookRepository
-import com.ElOuedUniv.maktaba.data.repository.BookRepositoryImpl
 import com.ElOuedUniv.maktaba.data.repository.CategoryRepository
-import com.ElOuedUniv.maktaba.data.repository.CategoryRepositoryImpl
+import com.ElOuedUniv.maktaba.data.repository.SupabaseCategoryRepositoryImpl
+import com.ElOuedUniv.maktaba.data.repository.SupabaseBookRepositoryImpl
+import io.github.jan.supabase.SupabaseClient
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -14,19 +15,21 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object DataModule {
 
-    @Provides
-    @Singleton
-    fun provideCategoryRepository(
-        categoryRepositoryImpl: CategoryRepositoryImpl
-    ): CategoryRepository {
-        return categoryRepositoryImpl
-    }
+    // ❗ نحذفو SupabaseClient من هنا (راه موجود في SupabaseModule)
 
     @Provides
     @Singleton
     fun provideBookRepository(
-        bookRepositoryImpl: BookRepositoryImpl
+        client: SupabaseClient
     ): BookRepository {
-        return bookRepositoryImpl
+        return SupabaseBookRepositoryImpl(client)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCategoryRepository(
+        client: SupabaseClient
+    ): CategoryRepository {
+        return SupabaseCategoryRepositoryImpl(client)
     }
 }

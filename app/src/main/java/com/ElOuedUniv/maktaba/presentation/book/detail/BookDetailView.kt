@@ -9,7 +9,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -32,17 +32,24 @@ fun BookDetailView(
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
 
+    // ✅ رجوع تلقائي بعد الحذف
+    LaunchedEffect(uiState.isDeleted) {
+        if (uiState.isDeleted) {
+            onBackClick()
+        }
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { 
+                title = {
                     Text(
-                        "BOOK DETAILS", 
+                        "BOOK DETAILS",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
                         )
-                    ) 
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -55,128 +62,134 @@ fun BookDetailView(
             )
         }
     ) { padding ->
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            if (uiState.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else if (uiState.book != null) {
-                val book = uiState.book!!
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(scrollState)
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Hero Section: Book Cover
-                    Card(
+
+            when {
+                uiState.isLoading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+
+                uiState.book != null -> {
+
+                    val book = uiState.book!!
+
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth(0.9f)
-                            .aspectRatio(0.7f),
-                        shape = MaterialTheme.shapes.extraLarge,
-                        elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+                            .fillMaxSize()
+                            .verticalScroll(scrollState)
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            if (book.imageUrl != null) {
-                                AsyncImage(
-                                    model = book.imageUrl,
-                                    contentDescription = book.title,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Book,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(120.dp).align(Alignment.Center),
-                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                )
+
+                        // 📷 Image
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth(0.9f)
+                                .aspectRatio(0.7f),
+                            shape = MaterialTheme.shapes.extraLarge,
+                            elevation = CardDefaults.cardElevation(16.dp)
+                        ) {
+                            Box(Modifier.fillMaxSize()) {
+                                if (!book.imageUrl.isNullOrBlank()) {
+                                    AsyncImage(
+                                        model = book.imageUrl,
+                                        contentDescription = book.title,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.Book,
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .size(120.dp)
+                                            .align(Alignment.Center),
+                                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                    )
+                                }
                             }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                        Spacer(modifier = Modifier.height(32.dp))
 
-                    // Title Section
-                    Text(
-                        text = book.title,
-                        style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    // Metadata Section
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.large,
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        // 📘 Title
+                        Text(
+                            text = book.title,
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.ExtraBold
                         )
-                    ) {
-                        Column(modifier = Modifier.padding(20.dp)) {
-                            // Reading Status
-                            MetadataItem(
-                                icon = Icons.Default.MenuBook,
-                                label = "Reading Status:",
-                                value = if (book.nbPages > 0) "75% Reading" else "Not started"
-                            ) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                LinearProgressIndicator(
-                                    progress = { if (book.nbPages > 0) 0.75f else 0f },
-                                    modifier = Modifier.fillMaxWidth().height(8.dp),
-                                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        // 📊 Info Card
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.large,
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(20.dp)) {
+
+                                MetadataItem(
+                                    icon = Icons.Default.MenuBook,
+                                    label = "Reading Status:",
+                                    value = if (book.nbPages > 0) "Reading" else "Not started"
                                 )
-                            }
 
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 16.dp),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
-                            )
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(vertical = 16.dp)
+                                )
 
-                            Row(modifier = Modifier.fillMaxWidth()) {
-                                Box(modifier = Modifier.weight(1f)) {
-                                    MetadataItem(
-                                        icon = Icons.Default.Straighten, // Ruler
-                                        label = "Pages:",
-                                        value = if (book.nbPages > 0) "${book.nbPages}" else "Not set"
-                                    )
+                                Row(Modifier.fillMaxWidth()) {
+
+                                    Box(Modifier.weight(1f)) {
+                                        MetadataItem(
+                                            icon = Icons.Default.Straighten,
+                                            label = "Pages:",
+                                            value = book.nbPages.toString()
+                                        )
+                                    }
+
+                                    Box(Modifier.weight(1f)) {
+                                        MetadataItem(
+                                            icon = Icons.AutoMirrored.Filled.List,
+                                            label = "ISBN:",
+                                            value = book.isbn
+                                        )
+                                    }
                                 }
-                                Box(modifier = Modifier.weight(1f)) {
-                                    MetadataItem(
-                                        icon = Icons.AutoMirrored.Filled.List,
-                                        label = "ISBN:",
-                                        value = book.isbn
-                                    )
-                                }
                             }
+                        }
 
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 16.dp),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
-                            )
+                        // ✅ زر الحذف (مضاف بدون تغيير تصميمك)
+                        Spacer(modifier = Modifier.height(24.dp))
 
-                            MetadataItem(
-                                icon = Icons.Default.Fingerprint,
-                                label = "Format:",
-                                value = "Hardcover (Premium)"
-                            )
+                        Button(
+                            onClick = { viewModel.deleteBook() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Delete Book")
                         }
                     }
                 }
-            } else {
-                Text(
-                    text = uiState.errorMessage ?: "Book not found",
-                    modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.error
-                )
+
+                else -> {
+                    Text(
+                        text = uiState.errorMessage ?: "Book not found",
+                        modifier = Modifier.align(Alignment.Center),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }
@@ -191,24 +204,19 @@ fun MetadataItem(
 ) {
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
+
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
             Spacer(modifier = Modifier.width(12.dp))
+
             Column {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(label, style = MaterialTheme.typography.labelMedium)
+                Text(value, fontWeight = FontWeight.Bold)
             }
         }
         content()

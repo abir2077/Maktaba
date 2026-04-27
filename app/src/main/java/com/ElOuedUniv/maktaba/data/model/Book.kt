@@ -1,9 +1,19 @@
 package com.ElOuedUniv.maktaba.data.model
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Book(
     val isbn: String,
     val title: String,
-    val nbPages: Int,
-    val imageUrl: String? = null
-)
 
+    @SerialName("nb_pages")
+    val nbPages: Int,
+
+    @SerialName("image_url")
+    val imageUrl: String? = null,
+
+    @SerialName("category_id")
+    val categoryId: String? = null
+)

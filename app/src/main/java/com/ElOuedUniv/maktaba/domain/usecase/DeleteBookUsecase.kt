@@ -1,13 +1,12 @@
 package com.ElOuedUniv.maktaba.domain.usecase
 
-import com.ElOuedUniv.maktaba.data.model.Book
 import com.ElOuedUniv.maktaba.data.repository.BookRepository
 import javax.inject.Inject
 
-class AddBookUseCase(
+class DeleteBookUseCase @Inject constructor(
     private val repository: BookRepository
 ) {
-    suspend operator fun invoke(book: Book) {
-        repository.addBook(book)
+    suspend operator fun invoke(isbn: String) {
+        repository.deleteBook(isbn)
     }
 }
